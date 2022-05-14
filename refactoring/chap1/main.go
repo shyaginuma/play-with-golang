@@ -7,10 +7,7 @@ import (
 
 type Invoice struct {
 	Customer     string
-	Performances []struct {
-		PlayID   string
-		Audience int
-	}
+	Performances []Performance
 }
 
 type Play struct {
@@ -18,13 +15,12 @@ type Play struct {
 	PlaytType string
 }
 
-var plays = map[string]Play{
-	"hamlet":  {"Hamlet", "tragedy"},
-	"as-like": {"As You Like It", "comedy"},
-	"othello": {"Othello", "tragedy"},
+type Performance struct {
+	PlayID   string
+	Audience int
 }
 
-func statement(invoice Invoice) (string, error) {
+func statement(invoice Invoice, plays map[string]Play) (string, error) {
 	totalAmount := 0
 	volumeCredit := 0
 	result := fmt.Sprintf("Statement for %s\n", invoice.Customer)
@@ -57,4 +53,25 @@ func statement(invoice Invoice) (string, error) {
 	result += fmt.Sprintf("Amount owed is %v\n", totalAmount)
 	result += fmt.Sprintf("You earned %v credits\n", volumeCredit)
 	return result, nil
+}
+
+func main() {
+	plays := map[string]Play{
+		"hamlet":  {"Hamlet", "tragedy"},
+		"as-like": {"As You Like It", "comedy"},
+		"othello": {"Othello", "tragedy"},
+	}
+
+	invoice := Invoice{
+		"Yagi",
+		[]Performance{
+			{"hamlet", 55},
+		},
+	}
+
+	result, err := statement(invoice, plays)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(result)
 }
