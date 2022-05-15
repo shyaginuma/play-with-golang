@@ -21,17 +21,22 @@ type Performance struct {
 }
 
 func statement(invoice Invoice) (string, error) {
-	totalAmount := 0
-	volumeCredits := 0
 	result := fmt.Sprintf("Statement for %s\n", invoice.Customer)
+
+	totalAmount := 0
 	for _, perf := range invoice.Performances {
 		thisAmount, err := amountFor(perf)
 		if err != nil {
 			return "", err
 		}
-		volumeCredits += volumeCreditsFor(perf)
 		result += fmt.Sprintf("\t%s: %v (%v seat)\n", playFor(perf).Name, thisAmount, perf.Audience)
 	}
+
+	volumeCredits := 0
+	for _, perf := range invoice.Performances {
+		volumeCredits += volumeCreditsFor(perf)
+	}
+
 	result += fmt.Sprintf("Amount owed is %v\n", totalAmount)
 	result += fmt.Sprintf("You earned %v credits\n", volumeCredits)
 	return result, nil
