@@ -22,8 +22,6 @@ type Performance struct {
 
 func statement(invoice Invoice) (string, error) {
 	result := fmt.Sprintf("Statement for %s\n", invoice.Customer)
-
-	totalAmount := 0
 	for _, perf := range invoice.Performances {
 		thisAmount, err := amountFor(perf)
 		if err != nil {
@@ -31,9 +29,30 @@ func statement(invoice Invoice) (string, error) {
 		}
 		result += fmt.Sprintf("\t%s: %v (%v seat)\n", playFor(perf).Name, thisAmount, perf.Audience)
 	}
-	result += fmt.Sprintf("Amount owed is %v\n", totalAmount)
+	result += fmt.Sprintf("Amount owed is %v\n", totalAmount(invoice))
 	result += fmt.Sprintf("You earned %v credits\n", totalVolumeCredits(invoice))
 	return result, nil
+}
+
+func totalVolumeCredits(invoice Invoice) int {
+	result := 0
+	for _, perf := range invoice.Performances {
+		result += volumeCreditsFor(perf)
+	}
+	return result
+}
+
+func totalAmount(invoice Invoice) int {
+	result := 0
+	for _, perf := range invoice.Performances {
+		thisAmount, err := amountFor(perf)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		result += thisAmount
+	}
+	return result
 }
 
 func amountFor(perf Performance) (int, error) {
@@ -56,14 +75,6 @@ func amountFor(perf Performance) (int, error) {
 	}
 
 	return result, nil
-}
-
-func totalVolumeCredits(invoice Invoice) int {
-	volumeCredits := 0
-	for _, perf := range invoice.Performances {
-		volumeCredits += volumeCreditsFor(perf)
-	}
-	return volumeCredits
 }
 
 func volumeCreditsFor(perf Performance) int {
