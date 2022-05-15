@@ -31,14 +31,8 @@ func statement(invoice Invoice) (string, error) {
 		}
 		result += fmt.Sprintf("\t%s: %v (%v seat)\n", playFor(perf).Name, thisAmount, perf.Audience)
 	}
-
-	volumeCredits := 0
-	for _, perf := range invoice.Performances {
-		volumeCredits += volumeCreditsFor(perf)
-	}
-
 	result += fmt.Sprintf("Amount owed is %v\n", totalAmount)
-	result += fmt.Sprintf("You earned %v credits\n", volumeCredits)
+	result += fmt.Sprintf("You earned %v credits\n", totalVolumeCredits(invoice))
 	return result, nil
 }
 
@@ -62,6 +56,14 @@ func amountFor(perf Performance) (int, error) {
 	}
 
 	return result, nil
+}
+
+func totalVolumeCredits(invoice Invoice) int {
+	volumeCredits := 0
+	for _, perf := range invoice.Performances {
+		volumeCredits += volumeCreditsFor(perf)
+	}
+	return volumeCredits
 }
 
 func volumeCreditsFor(perf Performance) int {
