@@ -18,33 +18,55 @@ type Play struct {
 type Performance struct {
 	PlayID   string
 	Audience int
+	Play     Play
+}
+
+type StatementData struct {
+	Customer     string
+	Performances []Performance
 }
 
 func statement(invoice Invoice) (string, error) {
-	result := fmt.Sprintf("Statement for %s\n", invoice.Customer)
-	for _, perf := range invoice.Performances {
+	data := StatementData{
+		Customer:     invoice.Customer,
+		Performances: invoice.Performances,
+	}
+	for _, perf := range data.Performances {
+		perf = enrichPerformance(perf)
+	}
+	return renderPlainText(data)
+}
+
+func enrichPerformance(perf Performance) Performance {
+	perf.Play = playFor(perf)
+	return perf
+}
+
+func renderPlainText(data StatementData) (string, error) {
+	result := fmt.Sprintf("Statement for %s\n", data.Customer)
+	for _, perf := range data.Performances {
 		thisAmount, err := amountFor(perf)
 		if err != nil {
 			return "", err
 		}
-		result += fmt.Sprintf("\t%s: %v (%v seat)\n", playFor(perf).Name, thisAmount, perf.Audience)
+		result += fmt.Sprintf("\t%s: %v (%v seat)\n", perf.Play.Name, thisAmount, perf.Audience)
 	}
-	result += fmt.Sprintf("Amount owed is %v\n", totalAmount(invoice))
-	result += fmt.Sprintf("You earned %v credits\n", totalVolumeCredits(invoice))
+	result += fmt.Sprintf("Amount owed is %v\n", totalAmount(data.Performances))
+	result += fmt.Sprintf("You earned %v credits\n", totalVolumeCredits(data.Performances))
 	return result, nil
 }
 
-func totalVolumeCredits(invoice Invoice) int {
+func totalVolumeCredits(p []Performance) int {
 	result := 0
-	for _, perf := range invoice.Performances {
+	for _, perf := range p {
 		result += volumeCreditsFor(perf)
 	}
 	return result
 }
 
-func totalAmount(invoice Invoice) int {
+func totalAmount(p []Performance) int {
 	result := 0
-	for _, perf := range invoice.Performances {
+	for _, perf := range p {
 		thisAmount, err := amountFor(perf)
 		if err != nil {
 			fmt.Println(err)
@@ -58,7 +80,7 @@ func totalAmount(invoice Invoice) int {
 func amountFor(perf Performance) (int, error) {
 	result := 0
 
-	switch playFor(perf).PlayType {
+	switch perf.Play.PlayType {
 	case "tragedy":
 		result = 40000
 		if perf.Audience > 30 {
@@ -71,7 +93,7 @@ func amountFor(perf Performance) (int, error) {
 		}
 		result += 300 * perf.Audience
 	default:
-		return 0, fmt.Errorf("unknown type: %s", playFor(perf).PlayType)
+		return 0, fmt.Errorf("unknown type: %s", perf.Play.PlayType)
 	}
 
 	return result, nil
@@ -80,7 +102,7 @@ func amountFor(perf Performance) (int, error) {
 func volumeCreditsFor(perf Performance) int {
 	result := 0
 	result += int(math.Max(float64(perf.Audience-30), 0.0))
-	if playFor(perf).PlayType == "comedy" {
+	if perf.Play.PlayType == "comedy" {
 		result += int(math.Floor(float64(perf.Audience) / 5))
 	}
 	return result
@@ -99,7 +121,7 @@ func main() {
 	invoice := Invoice{
 		"Yagi",
 		[]Performance{
-			{"hamlet", 55},
+			{PlayID: "hamlet", Audience: 55},
 		},
 	}
 
