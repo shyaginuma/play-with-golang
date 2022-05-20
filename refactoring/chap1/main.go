@@ -16,14 +16,18 @@ type Play struct {
 }
 
 type Performance struct {
-	PlayID   string
-	Audience int
-	Play     Play
+	PlayID        string
+	Audience      int
+	Play          Play
+	Amount        int
+	VolumeCredits int
 }
 
 type StatementData struct {
-	Customer     string
-	Performances []*Performance
+	Customer           string
+	Performances       []*Performance
+	TotalAmount        int
+	TotalVolumeCredits int
 }
 
 func statement(invoice Invoice) (string, error) {
@@ -32,34 +36,37 @@ func statement(invoice Invoice) (string, error) {
 		Performances: invoice.Performances,
 	}
 	for _, perf := range data.Performances {
-		perf = enrichPerformance(perf)
+		perf.enrich()
 	}
+	data.TotalAmount = totalAmount(data.Performances)
+	data.TotalVolumeCredits = totalVolumeCredits(data.Performances)
 	return renderPlainText(data)
 }
 
-func enrichPerformance(perf *Performance) *Performance {
+func (perf *Performance) enrich() {
 	perf.Play = playFor(*perf)
-	return perf
+	amount, err := amountFor(*perf)
+	if err != nil {
+		fmt.Println(err)
+	}
+	perf.Amount = amount
+	perf.VolumeCredits = volumeCreditsFor(*perf)
 }
 
 func renderPlainText(data StatementData) (string, error) {
 	result := fmt.Sprintf("Statement for %s\n", data.Customer)
 	for _, perf := range data.Performances {
-		thisAmount, err := amountFor(*perf)
-		if err != nil {
-			return "", err
-		}
-		result += fmt.Sprintf("\t%s: %v (%v seat)\n", perf.Play.Name, thisAmount, perf.Audience)
+		result += fmt.Sprintf("\t%s: %v (%v seat)\n", perf.Play.Name, perf.Amount, perf.Audience)
 	}
-	result += fmt.Sprintf("Amount owed is %v\n", totalAmount(data.Performances))
-	result += fmt.Sprintf("You earned %v credits\n", totalVolumeCredits(data.Performances))
+	result += fmt.Sprintf("Amount owed is %v\n", data.TotalAmount)
+	result += fmt.Sprintf("You earned %v credits\n", data.TotalVolumeCredits)
 	return result, nil
 }
 
 func totalVolumeCredits(p []*Performance) int {
 	result := 0
 	for _, perf := range p {
-		result += volumeCreditsFor(*perf)
+		result += perf.VolumeCredits
 	}
 	return result
 }
@@ -67,12 +74,7 @@ func totalVolumeCredits(p []*Performance) int {
 func totalAmount(p []*Performance) int {
 	result := 0
 	for _, perf := range p {
-		thisAmount, err := amountFor(*perf)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		result += thisAmount
+		result += perf.Amount
 	}
 	return result
 }
