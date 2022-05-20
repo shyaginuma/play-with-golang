@@ -7,7 +7,7 @@ import (
 
 type Invoice struct {
 	Customer     string
-	Performances []Performance
+	Performances []*Performance
 }
 
 type Play struct {
@@ -23,7 +23,7 @@ type Performance struct {
 
 type StatementData struct {
 	Customer     string
-	Performances []Performance
+	Performances []*Performance
 }
 
 func statement(invoice Invoice) (string, error) {
@@ -37,15 +37,15 @@ func statement(invoice Invoice) (string, error) {
 	return renderPlainText(data)
 }
 
-func enrichPerformance(perf Performance) Performance {
-	perf.Play = playFor(perf)
+func enrichPerformance(perf *Performance) *Performance {
+	perf.Play = playFor(*perf)
 	return perf
 }
 
 func renderPlainText(data StatementData) (string, error) {
 	result := fmt.Sprintf("Statement for %s\n", data.Customer)
 	for _, perf := range data.Performances {
-		thisAmount, err := amountFor(perf)
+		thisAmount, err := amountFor(*perf)
 		if err != nil {
 			return "", err
 		}
@@ -56,18 +56,18 @@ func renderPlainText(data StatementData) (string, error) {
 	return result, nil
 }
 
-func totalVolumeCredits(p []Performance) int {
+func totalVolumeCredits(p []*Performance) int {
 	result := 0
 	for _, perf := range p {
-		result += volumeCreditsFor(perf)
+		result += volumeCreditsFor(*perf)
 	}
 	return result
 }
 
-func totalAmount(p []Performance) int {
+func totalAmount(p []*Performance) int {
 	result := 0
 	for _, perf := range p {
-		thisAmount, err := amountFor(perf)
+		thisAmount, err := amountFor(*perf)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -120,7 +120,7 @@ func playFor(perf Performance) Play {
 func main() {
 	invoice := Invoice{
 		"Yagi",
-		[]Performance{
+		[]*Performance{
 			{PlayID: "hamlet", Audience: 55},
 		},
 	}
