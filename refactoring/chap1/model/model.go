@@ -17,6 +17,7 @@ type Performance struct {
 
 type EnrichedPerformance struct {
 	Performance
+	Play          Play
 	Amount        int
 	VolumeCredits int
 }
