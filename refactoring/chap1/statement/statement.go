@@ -1,7 +1,9 @@
 package statement
 
 import (
-	"github.com/play-with-golang/refactoring/chap1/calculator"
+	"math"
+
+	"github.com/play-with-golang/refactoring/chap1/master"
 	"github.com/play-with-golang/refactoring/chap1/model"
 )
 
@@ -15,13 +17,7 @@ type StatementData struct {
 func NewStatement(invoice model.Invoice) StatementData {
 	var performances []model.EnrichedPerformance
 	for _, p := range invoice.Performances {
-		c := calculator.NewPerformanceCalculator(p)
-		amount := c.Amount()
-		volumeCredits := c.VolumeCredits()
-		performances = append(
-			performances,
-			model.EnrichedPerformance{Performance: p, Amount: amount, VolumeCredits: volumeCredits},
-		)
+		performances = append(performances, EnrichPerformance(p))
 	}
 
 	data := StatementData{
@@ -47,4 +43,32 @@ func totalAmount(p []model.EnrichedPerformance) int {
 		result += perf.Amount
 	}
 	return result
+}
+
+func EnrichPerformance(p model.Performance) model.EnrichedPerformance {
+	play := master.Plays[p.PlayID]
+
+	amount := 0
+	volumeCredits := int(math.Max(float64(p.Audience-30), 0.0))
+	switch play.PlayType {
+	case "tragedy":
+		amount = 40000
+		if p.Audience > 30 {
+			amount += 1000 * (p.Audience - 30)
+		}
+	case "comedy":
+		amount = 30000
+		if p.Audience > 20 {
+			amount += 10000 + 500*(p.Audience-20)
+		}
+		amount += 300 * p.Audience
+
+		volumeCredits += int(math.Floor(float64(p.Audience) / 5))
+	}
+	return model.EnrichedPerformance{
+		Performance:   p,
+		Play:          play,
+		Amount:        amount,
+		VolumeCredits: volumeCredits,
+	}
 }
