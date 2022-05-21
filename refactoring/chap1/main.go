@@ -3,40 +3,16 @@ package main
 import (
 	"fmt"
 	"math"
+
+	"github.com/play-with-golang/refactoring/chap1/model"
 )
 
-type Invoice struct {
-	Customer     string
-	Performances []*Performance
-}
-
-type Play struct {
-	Name     string
-	PlayType string
-}
-
-type Performance struct {
-	PlayID        string
-	Audience      int
-	Play          Play
-	Amount        int
-	VolumeCredits int
-}
-
-type StatementData struct {
-	Customer           string
-	Performances       []*Performance
-	TotalAmount        int
-	TotalVolumeCredits int
-}
-
-func statement(invoice Invoice) (string, error) {
-	data := StatementData{
-		Customer:     invoice.Customer,
-		Performances: invoice.Performances,
-	}
-	for _, perf := range data.Performances {
-		perf.enrich()
+func main() {
+	invoice := model.Invoice{
+		Customer: "Yagi",
+		Performances: []model.Performance{
+			{PlayID: "hamlet", Audience: 55},
+		},
 	}
 	data.TotalAmount = totalAmount(data.Performances)
 	data.TotalVolumeCredits = totalVolumeCredits(data.Performances)
@@ -56,7 +32,7 @@ func (perf *Performance) enrich() {
 func renderPlainText(data StatementData) (string, error) {
 	result := fmt.Sprintf("Statement for %s\n", data.Customer)
 	for _, perf := range data.Performances {
-		result += fmt.Sprintf("\t%s: %v (%v seat)\n", perf.Play.Name, perf.Amount, perf.Audience)
+		result += fmt.Sprintf("\t%s: %v (%v seat)\n", perf.PlayID, perf.Amount, perf.Audience)
 	}
 	result += fmt.Sprintf("Amount owed is %v\n", data.TotalAmount)
 	result += fmt.Sprintf("You earned %v credits\n", data.TotalVolumeCredits)
